@@ -7,7 +7,6 @@ import org.bukkit.Sound;
 import org.bukkit.World;
 import org.bukkit.configuration.Configuration;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.scheduler.BukkitRunnable;
 
 import io.github.thebusybiscuit.slimefun4.api.items.ItemGroup;
 import io.github.thebusybiscuit.slimefun4.api.items.SlimefunItemStack;
@@ -23,6 +22,7 @@ import me.mrCookieSlime.Slimefun.api.inventory.BlockMenu;
  * Divine Altar
  */
 public class DivineAltar extends AbstractCrafter<SlimefunItemStack> {
+    private static int layer = 4;
 
     public DivineAltar(ItemGroup ig) {
         super(ig, AlchimiaItems.DIVINE_ALTAR, RecipeType.ANCIENT_ALTAR, new ItemStack[] {
@@ -129,49 +129,44 @@ public class DivineAltar extends AbstractCrafter<SlimefunItemStack> {
     @Override
     protected void finish(World w, Location l, BlockMenu menu, SlimefunItemStack item) {
         // Schedule task
-        new BukkitRunnable() {
-            private int layer = 4;
+        AlchimiaVitae.getScheduler().runAtLocationTimer(l, wrappedTask -> {
+            if (layer == 4) {
+                // Pre-craft
+                w.playSound(l, Sound.ENTITY_ILLUSIONER_PREPARE_MIRROR, 1, 1);
+                w.playSound(l, Sound.ITEM_LODESTONE_COMPASS_LOCK, 1.5F, 1);
 
-            @Override
-            public void run() {
-                if (layer == 4) {
-                    // Pre-craft
-                    w.playSound(l, Sound.ENTITY_ILLUSIONER_PREPARE_MIRROR, 1, 1);
-                    w.playSound(l, Sound.ITEM_LODESTONE_COMPASS_LOCK, 1.5F, 1);
+                // Decrease layer
+                layer--;
+            } else if (layer > 0) {
+                // Pre-craft
+                w.playSound(l, Sound.ENTITY_ILLUSIONER_MIRROR_MOVE, 1, 1);
+                w.playSound(l, Sound.ITEM_LODESTONE_COMPASS_LOCK, 1.5F, 1);
+                w.spawnParticle(Particle.FLASH, l, 2, 0.1, 0.1, 0.1);
 
-                    // Decrease layer
-                    layer--;
-                } else if (layer > 0) {
-                    // Pre-craft
-                    w.playSound(l, Sound.ENTITY_ILLUSIONER_MIRROR_MOVE, 1, 1);
-                    w.playSound(l, Sound.ITEM_LODESTONE_COMPASS_LOCK, 1.5F, 1);
-                    w.spawnParticle(Particle.FLASH, l, 2, 0.1, 0.1, 0.1);
+                // Decrease layer
+                layer--;
+            } else {
+                // Output the item
+                ItemStack newItem = item.clone();
 
-                    // Decrease layer
-                    layer--;
+                if (menu.fits(newItem, OUT_SLOTS)) {
+                    menu.pushItem(newItem, OUT_SLOTS);
                 } else {
-                    // Output the item
-                    ItemStack newItem = item.clone();
-
-                    if (menu.fits(newItem, OUT_SLOTS)) {
-                        menu.pushItem(newItem, OUT_SLOTS);
-                    } else {
-                        // Drop if it doesn't fit
-                        w.dropItemNaturally(l.add(0, 0.5, 0), newItem);
-                    }
-
-                    // Post-craft
-                    w.strikeLightningEffect(l.add(0, 0.5, 0));
-                    w.playSound(l, Sound.ITEM_TRIDENT_THUNDER, 1, 1);
-                    w.playSound(l, Sound.ENTITY_ILLUSIONER_MIRROR_MOVE, 1, 1);
-                    w.spawnParticle(Particle.FLASH, l, 5, 0.1, 0.1, 0.1);
-                    w.spawnParticle(Particle.REVERSE_PORTAL, l, 300, 2, 2, 2);
-
-                    // Cancel runnable
-                    this.cancel();
+                    // Drop if it doesn't fit
+                    w.dropItemNaturally(l.add(0, 0.5, 0), newItem);
                 }
+
+                // Post-craft
+                w.strikeLightningEffect(l.add(0, 0.5, 0));
+                w.playSound(l, Sound.ITEM_TRIDENT_THUNDER, 1, 1);
+                w.playSound(l, Sound.ENTITY_ILLUSIONER_MIRROR_MOVE, 1, 1);
+                w.spawnParticle(Particle.FLASH, l, 5, 0.1, 0.1, 0.1);
+                w.spawnParticle(Particle.REVERSE_PORTAL, l, 300, 2, 2, 2);
+
+                // Cancel runnable
+                wrappedTask.cancel();
             }
-        }.runTaskTimer(AlchimiaVitae.i(), 0, 30);
+        }, 1, 30);
     }
     // }}}
 

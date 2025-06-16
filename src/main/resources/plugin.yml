@@ -4,6 +4,7 @@ description: Slimefun addon that adds alchemy, herbalism, and a little magic
 main: me.apeiros.alchimiavitae.AlchimiaVitae
 version: ${project.version}
 api-version: 1.17
+folia-supported: true
 depend:
 - Slimefun
 softdepend:

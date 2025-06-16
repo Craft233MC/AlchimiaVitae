@@ -18,7 +18,6 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataType;
-import org.bukkit.scheduler.BukkitRunnable;
 
 import io.github.mooy1.infinitylib.core.AbstractAddon;
 import io.github.thebusybiscuit.slimefun4.api.items.ItemGroup;
@@ -35,6 +34,7 @@ import me.apeiros.alchimiavitae.setup.items.crafters.AltarOfInfusion.Infusion;
 import me.mrCookieSlime.Slimefun.api.inventory.BlockMenu;
 
 public class AltarOfInfusion extends AbstractCrafter<Infusion> {
+    private static int layer = 3;
 
     // Slot where the tool is placed
     private static final int TOOL_SLOT = 10;
@@ -335,65 +335,60 @@ public class AltarOfInfusion extends AbstractCrafter<Infusion> {
         }
 
         // Schedule task
-        new BukkitRunnable() {
-            private int layer = 3;
+        AlchimiaVitae.getScheduler().runAtLocationTimer(l, wrappedTask -> {
+            if (layer == 3) {
+                // Pre-craft
+                w.playSound(l, Sound.ENTITY_ILLUSIONER_PREPARE_MIRROR, 1, 1);
+                w.playSound(l, Sound.BLOCK_BEACON_POWER_SELECT, 1.5F, 1);
+                w.spawnParticle(Particle.FLASH, l, 2, 0.1, 0.1, 0.1);
 
-            @Override
-            public void run() {
-                if (layer == 3) {
-                    // Pre-craft
-                    w.playSound(l, Sound.ENTITY_ILLUSIONER_PREPARE_MIRROR, 1, 1);
-                    w.playSound(l, Sound.BLOCK_BEACON_POWER_SELECT, 1.5F, 1);
-                    w.spawnParticle(Particle.FLASH, l, 2, 0.1, 0.1, 0.1);
+                // Decrease layer
+                layer--;
+            } else if (layer == 2) {
+                // Pre-craft
+                w.playSound(l, Sound.ENTITY_ILLUSIONER_CAST_SPELL, 1, 1);
+                w.playSound(l, Sound.BLOCK_CONDUIT_ATTACK_TARGET, 0.5F, 1);
+                w.playSound(l, Sound.ENTITY_ILLUSIONER_PREPARE_BLINDNESS, 1, 1);
+                w.playSound(l, Sound.ITEM_TOTEM_USE, 0.1F, 1);
+                w.playSound(l, Sound.BLOCK_BEACON_POWER_SELECT, 0.3F, 1);
+                w.playSound(l, Sound.BLOCK_LODESTONE_PLACE, 1.5F, 1);
+                w.spawnParticle(Particle.FLASH, l, 2, 0.1, 0.1, 0.1);
 
-                    // Decrease layer
-                    layer--;
-                } else if (layer == 2) {
-                    // Pre-craft
-                    w.playSound(l, Sound.ENTITY_ILLUSIONER_CAST_SPELL, 1, 1);
-                    w.playSound(l, Sound.BLOCK_CONDUIT_ATTACK_TARGET, 0.5F, 1);
-                    w.playSound(l, Sound.ENTITY_ILLUSIONER_PREPARE_BLINDNESS, 1, 1);
-                    w.playSound(l, Sound.ITEM_TOTEM_USE, 0.1F, 1);
-                    w.playSound(l, Sound.BLOCK_BEACON_POWER_SELECT, 0.3F, 1);
-                    w.playSound(l, Sound.BLOCK_LODESTONE_PLACE, 1.5F, 1);
-                    w.spawnParticle(Particle.FLASH, l, 2, 0.1, 0.1, 0.1);
+                // Decrease layer
+                layer--;
+            } else if (layer == 1) {
+                // Pre-craft
+                w.playSound(l, Sound.ENTITY_ILLUSIONER_MIRROR_MOVE, 1, 1);
+                w.playSound(l, Sound.BLOCK_CONDUIT_ATTACK_TARGET, 1.5F, 1);
+                w.playSound(l, Sound.ITEM_LODESTONE_COMPASS_LOCK, 1.5F, 1);
+                w.playSound(l, Sound.BLOCK_BEACON_POWER_SELECT, 0.3F, 1);
+                w.playSound(l, Sound.ITEM_TOTEM_USE, 0.3F, 1);
+                w.spawnParticle(Particle.FLASH, l, 2, 0.1, 0.1, 0.1);
 
-                    // Decrease layer
-                    layer--;
-                } else if (layer == 1) {
-                    // Pre-craft
-                    w.playSound(l, Sound.ENTITY_ILLUSIONER_MIRROR_MOVE, 1, 1);
-                    w.playSound(l, Sound.BLOCK_CONDUIT_ATTACK_TARGET, 1.5F, 1);
-                    w.playSound(l, Sound.ITEM_LODESTONE_COMPASS_LOCK, 1.5F, 1);
-                    w.playSound(l, Sound.BLOCK_BEACON_POWER_SELECT, 0.3F, 1);
-                    w.playSound(l, Sound.ITEM_TOTEM_USE, 0.3F, 1);
-                    w.spawnParticle(Particle.FLASH, l, 2, 0.1, 0.1, 0.1);
-
-                    // Decrease layer
-                    layer--;
+                // Decrease layer
+                layer--;
+            } else {
+                // Output the item
+                if (menu.fits(tool, OUT_SLOTS)) {
+                    menu.pushItem(tool, OUT_SLOTS);
                 } else {
-                    // Output the item
-                    if (menu.fits(tool, OUT_SLOTS)) {
-                        menu.pushItem(tool, OUT_SLOTS);
-                    } else {
-                        // Drop if it doesn't fit
-                        w.dropItemNaturally(l.add(0, 0.5, 0), tool);
-                    }
-
-                    // Post-craft
-                    w.strikeLightningEffect(l.add(0, 0.5, 0));
-                    w.playSound(l, Sound.ITEM_TRIDENT_THUNDER, 0.5F, 1);
-                    w.playSound(l, Sound.ENTITY_ILLUSIONER_MIRROR_MOVE, 1, 1);
-                    w.playSound(l, Sound.BLOCK_BEACON_ACTIVATE, 1, 1);
-                    w.playSound(l, Sound.ITEM_TOTEM_USE, 0.5F, 1);
-                    w.spawnParticle(Particle.END_ROD, l, 5, 0, 8, 0);
-                    w.spawnParticle(Particle.PORTAL, l, 300, 2, 2, 2);
-
-                    // Cancel runnable
-                    this.cancel();
+                    // Drop if it doesn't fit
+                    w.dropItemNaturally(l.add(0, 0.5, 0), tool);
                 }
+
+                // Post-craft
+                w.strikeLightningEffect(l.add(0, 0.5, 0));
+                w.playSound(l, Sound.ITEM_TRIDENT_THUNDER, 0.5F, 1);
+                w.playSound(l, Sound.ENTITY_ILLUSIONER_MIRROR_MOVE, 1, 1);
+                w.playSound(l, Sound.BLOCK_BEACON_ACTIVATE, 1, 1);
+                w.playSound(l, Sound.ITEM_TOTEM_USE, 0.5F, 1);
+                w.spawnParticle(Particle.END_ROD, l, 5, 0, 8, 0);
+                w.spawnParticle(Particle.PORTAL, l, 300, 2, 2, 2);
+
+                // Cancel runnable
+                wrappedTask.cancel();
             }
-        }.runTaskTimer(AlchimiaVitae.i(), 0, 30);
+        }, 1, 30);
     }
     // }}}
 

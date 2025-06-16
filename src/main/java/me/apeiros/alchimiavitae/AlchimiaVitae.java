@@ -1,5 +1,7 @@
 package me.apeiros.alchimiavitae;
 
+import com.tcoded.folialib.FoliaLib;
+import com.tcoded.folialib.impl.PlatformScheduler;
 import io.github.mooy1.infinitylib.core.AbstractAddon;
 import io.github.mooy1.infinitylib.metrics.bukkit.Metrics;
 
@@ -14,6 +16,7 @@ import java.util.logging.Level;
 public class AlchimiaVitae extends AbstractAddon {
 
     private static AlchimiaVitae instance;
+    private static FoliaLib foliaLib;
 
     public AlchimiaVitae() {
         super("SlimefunGuguProject", "AlchimiaVitae", "master", "options.auto-update");
@@ -23,6 +26,7 @@ public class AlchimiaVitae extends AbstractAddon {
     public void enable() {
         // Set instance
         instance = this;
+        foliaLib = new FoliaLib(this);
 
         if (!getServer().getPluginManager().isPluginEnabled("GuizhanLibPlugin")) {
             getLogger().log(Level.SEVERE, "本插件需要 鬼斩前置库插件(GuizhanLibPlugin) 才能运行!");
@@ -50,6 +54,10 @@ public class AlchimiaVitae extends AbstractAddon {
 
     public static AlchimiaVitae i() {
         return instance;
+    }
+
+    public static PlatformScheduler getScheduler() {
+        return foliaLib.getScheduler();
     }
 
 }

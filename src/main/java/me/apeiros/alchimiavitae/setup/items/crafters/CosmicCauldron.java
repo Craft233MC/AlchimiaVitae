@@ -6,7 +6,6 @@ import org.bukkit.Particle;
 import org.bukkit.Sound;
 import org.bukkit.World;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.scheduler.BukkitRunnable;
 
 import io.github.thebusybiscuit.slimefun4.api.items.ItemGroup;
 import io.github.thebusybiscuit.slimefun4.api.items.SlimefunItemStack;
@@ -21,6 +20,7 @@ import me.mrCookieSlime.Slimefun.api.inventory.BlockMenu;
  * Cosmic Cauldron
  */
 public class CosmicCauldron extends AbstractCrafter<SlimefunItemStack> {
+    private static int layer = 4;
 
     public CosmicCauldron(ItemGroup ig, DivineAltar divineAltar) {
         super(ig, AlchimiaItems.COSMIC_CAULDRON, AlchimiaUtils.RecipeTypes.DIVINE_ALTAR, new ItemStack[]{
@@ -51,51 +51,46 @@ public class CosmicCauldron extends AbstractCrafter<SlimefunItemStack> {
     @Override
     protected void finish(World w, Location l, BlockMenu menu, SlimefunItemStack item) {
         // Schedule task
-        new BukkitRunnable() {
-            private int layer = 4;
+        AlchimiaVitae.getScheduler().runAtLocationTimer(l, wrappedTask -> {
+            if (layer == 4) {
+                // Pre-craft
+                w.playSound(l, Sound.ENTITY_ILLUSIONER_PREPARE_BLINDNESS, 1, 1);
+                w.spawnParticle(Particle.SPELL_WITCH, l, 2, 1, 1, 1);
 
-            @Override
-            public void run() {
-                if (layer == 4) {
-                    // Pre-craft
-                    w.playSound(l, Sound.ENTITY_ILLUSIONER_PREPARE_BLINDNESS, 1, 1);
-                    w.spawnParticle(Particle.SPELL_WITCH, l, 2, 1, 1, 1);
+                // Decrease layer
+                layer--;
+            } else if (layer > 0) {
+                // Pre-craft
+                w.playSound(l, Sound.BLOCK_BREWING_STAND_BREW, 1, 1);
+                w.playSound(l, Sound.ITEM_LODESTONE_COMPASS_LOCK, 1, 1);
+                w.spawnParticle(Particle.CRIT_MAGIC, l, 200, 1, 1, 1);
 
-                    // Decrease layer
-                    layer--;
-                } else if (layer > 0) {
-                    // Pre-craft
-                    w.playSound(l, Sound.BLOCK_BREWING_STAND_BREW, 1, 1);
-                    w.playSound(l, Sound.ITEM_LODESTONE_COMPASS_LOCK, 1, 1);
-                    w.spawnParticle(Particle.CRIT_MAGIC, l, 200, 1, 1, 1);
+                // Decrease layer
+                layer--;
+            } else {
+                // Output the item
+                ItemStack newItem = item.clone();
 
-                    // Decrease layer
-                    layer--;
+                if (menu.fits(newItem, OUT_SLOTS)) {
+                    menu.pushItem(newItem, OUT_SLOTS);
                 } else {
-                    // Output the item
-                    ItemStack newItem = item.clone();
-
-                    if (menu.fits(newItem, OUT_SLOTS)) {
-                        menu.pushItem(newItem, OUT_SLOTS);
-                    } else {
-                        // Drop if it doesn't fit
-                        w.dropItemNaturally(l.add(0, 0.5, 0), newItem);
-                    }
-
-                    // Post-craft
-                    w.playSound(l, Sound.ITEM_BOTTLE_FILL, 1, 1);
-                    w.playSound(l, Sound.ENTITY_ILLUSIONER_MIRROR_MOVE, 0.5F, 1);
-                    w.playSound(l, Sound.ENTITY_ILLUSIONER_PREPARE_BLINDNESS, 1, 1);
-                    w.playSound(l, Sound.BLOCK_BREWING_STAND_BREW, 1, 1);
-                    w.playSound(l, Sound.ITEM_LODESTONE_COMPASS_LOCK, 2, 1);
-                    w.spawnParticle(Particle.FLASH, l, 1, 0.1, 0.1, 0.1);
-                    w.spawnParticle(Particle.END_ROD, l, 200, 0.1, 4, 0.1);
-
-                    // Cancel runnable
-                    this.cancel();
+                    // Drop if it doesn't fit
+                    w.dropItemNaturally(l.add(0, 0.5, 0), newItem);
                 }
+
+                // Post-craft
+                w.playSound(l, Sound.ITEM_BOTTLE_FILL, 1, 1);
+                w.playSound(l, Sound.ENTITY_ILLUSIONER_MIRROR_MOVE, 0.5F, 1);
+                w.playSound(l, Sound.ENTITY_ILLUSIONER_PREPARE_BLINDNESS, 1, 1);
+                w.playSound(l, Sound.BLOCK_BREWING_STAND_BREW, 1, 1);
+                w.playSound(l, Sound.ITEM_LODESTONE_COMPASS_LOCK, 2, 1);
+                w.spawnParticle(Particle.FLASH, l, 1, 0.1, 0.1, 0.1);
+                w.spawnParticle(Particle.END_ROD, l, 200, 0.1, 4, 0.1);
+
+                // Cancel runnable
+                wrappedTask.cancel();
             }
-        }.runTaskTimer(AlchimiaVitae.i(), 0, 30);
+        }, 1, 30);
     }
     // }}}
 

@@ -1,6 +1,7 @@
 name: Java CI
 
 on:
+  workflow_dispatch:
   push:
     branches:
       - master
@@ -15,11 +16,69 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3.5.3
-      - name: Set up JDK 16
+
+      - name: Set up JDK 17
         uses: actions/setup-java@v3
         with:
           distribution: 'temurin'
-          java-version: 16
+          java-version: 17
           cache: 'maven'
+
+      - name: Cache Maven packages
+        uses: actions/cache@v3
+        with:
+          path: ~/.m2
+          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+          restore-keys: ${{ runner.os }}-m2
+
+      - name: Download Slimefun from artifact
+        uses: dawidd6/action-download-artifact@v9
+        with:
+          github_token: ${{secrets.GITHUB_TOKEN}}
+          workflow: dev-ci.yml
+          workflow_conclusion: success
+          repo: Craft233MC/Slimefun4
+          use_unzip: true
+
+      - name: Download GuizhanLibPlugin from artifact
+        uses: dawidd6/action-download-artifact@v9
+        with:
+          github_token: ${{secrets.GITHUB_TOKEN}}
+          workflow: ci.yml
+          workflow_conclusion: success
+          repo: Craft233MC/GuizhanLibPlugin
+          use_unzip: true
+
+      - name: Download InfinityLib from artifact
+        uses: dawidd6/action-download-artifact@v9
+        with:
+          github_token: ${{secrets.GITHUB_TOKEN}}
+          workflow: maven.yml
+          workflow_conclusion: success
+          repo: Craft233MC/InfinityLib
+          use_unzip: true
+
+      - name: Place local depends
+        run: |
+          export SF=$(ls | grep Slimefun)
+          export GZP=$(ls | grep Guizhan)
+          export IN=$(ls | grep InfinityLib | grep jar)
+          mv "${IN}" InfinityLib.jar && mv InfinityLib.jar/"${IN}" InfinityLib.jar/InfinityLib.jar
+          mvn install:install-file -Dfile=${SF}/${SF} -DgroupId=top.craft233 -DartifactId=Slimefun4 -Dversion=b39097e015 -Dpackaging=jar
+          mvn install:install-file -Dfile=${GZP}/${GZP} -DgroupId=top.craft233 -DartifactId=GuizhanLibPlugin -Dversion=1.7.6 -Dpackaging=jar
+          mvn install:install-file -Dfile=InfinityLib.jar/InfinityLib.jar -DgroupId=top.craft233 -DartifactId=InfinityLib -Dversion=1.3.9 -Dpackaging=jar
+
       - name: Build with Maven
         run: mvn package --file pom.xml
+
+      - name: select jar
+        run: |
+          cd target
+          rm -rf original*
+          echo "FILE=$(ls | grep jar)" >> $GITHUB_ENV
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.FILE }}
+          path: target/${{ env.FILE }}

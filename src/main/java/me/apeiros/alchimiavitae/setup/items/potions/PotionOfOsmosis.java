@@ -13,7 +13,6 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.player.PlayerItemConsumeEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.potion.PotionEffect;
-import org.bukkit.scheduler.BukkitRunnable;
 
 import io.github.thebusybiscuit.slimefun4.api.items.ItemGroup;
 
@@ -23,6 +22,7 @@ import me.apeiros.alchimiavitae.setup.AlchimiaItems;
 import me.apeiros.alchimiavitae.setup.items.crafters.CosmicCauldron;
 
 public class PotionOfOsmosis extends AbstractListenerPotion {
+    private static int layer = 2;
 
     public PotionOfOsmosis(ItemGroup ig, CosmicCauldron cauldron) {
         super(ig, AlchimiaItems.POTION_OF_OSMOSIS, AlchimiaUtils.RecipeTypes.COSMIC_CAULDRON, new ItemStack[] {
@@ -71,44 +71,39 @@ public class PotionOfOsmosis extends AbstractListenerPotion {
                 "", AlchimiaUtils.itemType("药水"));
 
         // {{{ Finish
-        new BukkitRunnable() {
-            private int layer = 2;
+        AlchimiaVitae.getScheduler().runAtLocationTimer(p.getLocation(), wrappedTask -> {
+            World w = p.getWorld();
+            Location l = p.getLocation();
 
-            @Override
-            public void run() {
-                World w = p.getWorld();
-                Location l = p.getLocation();
+            if (layer == 2) {
+                // Effects
+                w.playSound(l, Sound.BLOCK_BREWING_STAND_BREW, 1, 1);
 
-                if (layer == 2) {
-                    // Effects
-                    w.playSound(l, Sound.BLOCK_BREWING_STAND_BREW, 1, 1);
+                // Decrease layer
+                layer--;
+            } else if (layer == 1) {
+                // Effects
+                w.playSound(l, Sound.BLOCK_BEACON_ACTIVATE, 1, 1);
 
-                    // Decrease layer
-                    layer--;
-                } else if (layer == 1) {
-                    // Effects
-                    w.playSound(l, Sound.BLOCK_BEACON_ACTIVATE, 1, 1);
+                // Decrease layer
+                layer--;
+            } else {
+                // Effects
+                w.playSound(l, Sound.ITEM_BOTTLE_FILL_DRAGONBREATH, 1, 1);
+                w.playSound(l, Sound.ITEM_BOTTLE_FILL, 1, 1);
+                w.playSound(l, Sound.ITEM_TOTEM_USE, 0.6F, 1);
+                w.spawnParticle(Particle.END_ROD, l, 60, 1, 1, 1);
 
-                    // Decrease layer
-                    layer--;
-                } else {
-                    // Effects
-                    w.playSound(l, Sound.ITEM_BOTTLE_FILL_DRAGONBREATH, 1, 1);
-                    w.playSound(l, Sound.ITEM_BOTTLE_FILL, 1, 1);
-                    w.playSound(l, Sound.ITEM_TOTEM_USE, 0.6F, 1);
-                    w.spawnParticle(Particle.END_ROD, l, 60, 1, 1, 1);
-
-                    // Add potion to player's inventory
-                    if (!p.getInventory().addItem(newPotion).isEmpty()) {
-                        // Drop it on the ground if no inventory space
-                        w.dropItemNaturally(l, newPotion);
-                    }
-
-                    // Cancel runnable
-                    this.cancel();
+                // Add potion to player's inventory
+                if (!p.getInventory().addItem(newPotion).isEmpty()) {
+                    // Drop it on the ground if no inventory space
+                    w.dropItemNaturally(l, newPotion);
                 }
+
+                // Cancel runnable
+                wrappedTask.cancel();
             }
-        }.runTaskTimer(AlchimiaVitae.i(), 0, 30);
+        }, 1, 30);
         // }}}
     }
     // }}}
