@@ -32,6 +32,11 @@
             <id>spigot-repo</id>
             <url>https://hub.spigotmc.org/nexus/content/repositories/snapshots/</url>
         </repository>
+
+        <repository>
+            <id>tcoded-releases</id>
+            <url>https://repo.tcoded.com/releases</url>
+        </repository>
     </repositories>
 
     <pluginRepositories>
@@ -134,9 +139,9 @@
 
         <!-- Minecraft libraries -->
         <dependency>
-            <groupId>com.github.technicallycoded</groupId>
+            <groupId>com.tcoded</groupId>
             <artifactId>FoliaLib</artifactId>
-            <version>0.4.4</version>
+            <version>0.5.1</version>
             <scope>compile</scope>
         </dependency>
 
